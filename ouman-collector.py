@@ -39,6 +39,8 @@ def main():
     influx.create_database(INFLUX.get("database"))
 
     measurements = []
+    l1menovesi = False
+    l1paluuvesi = False
     for key in oumanSerial.OUMAN_DEVICES[ouman_device]:
         data = oser.runQueryCommand(key[0])
         if len(data) > 0:
@@ -52,6 +54,10 @@ def main():
                 except ValueError:
                     pass
 
+            if key[0] == "L1 menovesi":
+                l1menovesi = data
+            elif key[0] == "L1 paluuvesi":
+                l1paluuvesi = data
             measurements.append(
                 {
                     "measurement": key[0],
@@ -65,6 +71,18 @@ def main():
         else:
             print key[0] + ': ERROR'
 
+        if l1menovesi and l1paluuvesi:
+            erotus = float(l1menovesi) - float(l1paluuvesi)
+            measurements.append(
+                {
+                    "measurement": "L1 erotus",
+                    "tags": {
+                        "device": ouman_device
+                    },
+                    "fields": {
+                        "value": erotus
+                    }
+                })
     influx.write_points(measurements)
 
 if __name__ == "__main__":
